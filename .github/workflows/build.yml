@@ -30,8 +30,7 @@ jobs:
           packages: ''
 
       - name: Install build-tools 33.0.2 and platform 33
-        run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" "platforms;android-33" || true
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" "platforms;android-33" || true
 
       - name: Install Gradle 8.7 and override system Gradle
         run: |
@@ -39,7 +38,6 @@ jobs:
           unzip -q /tmp/gradle-8.7.zip -d /opt
           sudo ln -sf /opt/gradle-8.7/bin/gradle /usr/local/bin/gradle
           sudo ln -sf /opt/gradle-8.7/bin/gradle /usr/bin/gradle
-          gradle --version
 
       - name: Install Cordova 12
         run: npm install -g cordova@12
@@ -50,11 +48,19 @@ jobs:
       - name: Add cordova-android 12
         run: cordova platform add android@12
 
-      - name: Pin gradlew to use Gradle 8.7
+      - name: Show all files under platforms/android
+        run: find platforms/android -name "*.properties" | head -20
+
+      - name: Force Gradle 8.7 wrapper
         run: |
-          sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.7-bin.zip|' \
-            platforms/android/gradle/wrapper/gradle-wrapper.properties
-          cat platforms/android/gradle/wrapper/gradle-wrapper.properties
+          mkdir -p platforms/android/gradle/wrapper
+          cat > platforms/android/gradle/wrapper/gradle-wrapper.properties << 'PROPS'
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          PROPS
 
       - name: Build debug APK
         run: cordova build android --debug
