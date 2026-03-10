@@ -38,8 +38,11 @@ jobs:
       - name: Add cordova-android 12
         run: cordova platform add android@12
 
-      - name: Debug - show gradle wrapper location
-        run: find platforms/ -name "gradle-wrapper.properties" 2>/dev/null || echo "NOT FOUND"
+      - name: Patch wrapper.gradle to pin Gradle 8.7
+        run: |
+          WRAPPER=platforms/android/wrapper.gradle
+          sed -i "s|gradleVersion =.*|gradleVersion = '8.7'|" "$WRAPPER"
+          cat "$WRAPPER"
 
       - name: Force SDK 34 in build.gradle
         run: |
