@@ -29,6 +29,10 @@ jobs:
         with:
           packages: ''
 
+      - name: Install build-tools 33.0.2 and platform 33
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" "platforms;android-33" || true
+
       - name: Install Gradle 8.7 and override system Gradle
         run: |
           wget -q https://services.gradle.org/distributions/gradle-8.7-bin.zip -O /tmp/gradle-8.7.zip
@@ -46,11 +50,11 @@ jobs:
       - name: Add cordova-android 12
         run: cordova platform add android@12
 
-      - name: Force SDK 34 in build.gradle
+      - name: Pin gradlew to use Gradle 8.7
         run: |
-          sed -i 's/compileSdkVersion .*/compileSdkVersion 34/' platforms/android/app/build.gradle
-          sed -i 's/targetSdkVersion .*/targetSdkVersion 34/' platforms/android/app/build.gradle
-          sed -i 's/buildToolsVersion .*/buildToolsVersion "34.0.0"/' platforms/android/app/build.gradle
+          sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.7-bin.zip|' \
+            platforms/android/gradle/wrapper/gradle-wrapper.properties
+          cat platforms/android/gradle/wrapper/gradle-wrapper.properties
 
       - name: Build debug APK
         run: cordova build android --debug
