@@ -35,8 +35,19 @@ jobs:
       - name: Create www and copy index.html
         run: mkdir -p www && cp index.html www/index.html
 
-      - name: Add cordova-android 13
-        run: cordova platform add android@13
+      - name: Add cordova-android 12
+        run: cordova platform add android@12
+
+      - name: Force SDK 34 in build.gradle
+        run: |
+          sed -i 's/compileSdkVersion .*/compileSdkVersion 34/' platforms/android/app/build.gradle
+          sed -i 's/targetSdkVersion .*/targetSdkVersion 34/' platforms/android/app/build.gradle
+          sed -i 's/buildToolsVersion .*/buildToolsVersion "34.0.0"/' platforms/android/app/build.gradle
+
+      - name: Pin Gradle to 8.7
+        run: |
+          WRAPPER=$(find platforms/android -name "gradle-wrapper.properties" | head -1)
+          sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.7-bin.zip|' "$WRAPPER"
 
       - name: Build debug APK
         run: cordova build android --debug
