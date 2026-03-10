@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Reflex Symphony: Confetti Edition</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #0f172a; font-family: sans-serif; height: 100vh; user-select: none; touch-action: none; }
+        #score-board { position: absolute; top: 20px; color: #f8fafc; font-size: 3rem; font-weight: 900; pointer-events: none; z-index: 100; }
+        .dot { width: 60px; height: 60px; border-radius: 50%; position: absolute; cursor: pointer; z-index: 50; transition: transform 0.1s; }
+        #yellow { background-color: #f1c40f; box-shadow: 0 0 20px #f1c40f88; }
+        #blue   { background-color: #3498db; box-shadow: 0 0 20px #3498db88; }
+        #green  { background-color: #2ecc71; box-shadow: 0 0 20px #2ecc7188; }
+        #grey   { background-color: #94a3b8; box-shadow: 0 0 20px #94a3b888; }
+        #red    { background-color: #e74c3c; box-shadow: 0 0 20px #e74c3c88; }
+        #purple { background-color: #9b59b6; box-shadow: 0 0 20px #9b59b688; }
+        #white  { background-color: #ffffff; box-shadow: 0 0 20px #ffffff88; }
+        #brown  { background-color: #8b4513; box-shadow: 0 0 20px #8b451388; }
+        #orange { background-color: #e67e22; box-shadow: 0 0 20px #e67e2288; }
+        .confetti { position: absolute; width: 10px; height: 10px; pointer-events: none; z-index: 10; }
+    </style>
+</head>
+<body>
+    <div id="score-board">Score: <span id="score">0</span></div>
+    <div id="yellow" class="dot"></div>
+    <div id="blue" class="dot"></div>
+    <div id="green" class="dot"></div>
+    <div id="grey" class="dot"></div>
+    <div id="red" class="dot"></div>
+    <div id="purple" class="dot"></div>
+    <div id="white" class="dot"></div>
+    <div id="brown" class="dot"></div>
+    <div id="orange" class="dot"></div>
+    <script>
+        const scoreDisplay = document.getElementById('score');
+        const dots = {
+            yellow: { el: document.getElementById('yellow'), freq: 880, scale: 1 },
+            blue:   { el: document.getElementById('blue'),   freq: 659 },
+            green:  { el: document.getElementById('green'),  freq: 523 },
+            grey:   { el: document.getElementById('grey'),   freq: 220 },
+            red:    { el: document.getElementById('red'),    freq: 392 },
+            purple: { el: document.getElementById('purple'), freq: 1046 },
+            white:  { el: document.getElementById('white'),  freq: 784 },
+            brown:  { el: document.getElementById('brown'),  freq: 150 },
+            orange: { el: document.getElementById('orange'), freq: 440, y: 0 }
+        };
+        let score = 0;
+        const dotSize = 60;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(freq) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+        }
+
+        function launchConfetti() {
+            for (let i = 0; i < 50; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 60%)`;
+                conf.style.left = '50%'; conf.style.top = '50%';
+                document.body.appendChild(conf);
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = 5 + Math.random() * 10;
+                let px = window.innerWidth / 2; let py = window.innerHeight / 2; let life = 1;
+                function update() {
+                    px += Math.cos(angle) * velocity; py += Math.sin(angle) * velocity + 0.2; life -= 0.02;
+                    conf.style.left = px + 'px'; conf.style.top = py + 'px';
+                    conf.style.opacity = life;
+                    if (life > 0) requestAnimationFrame(update); else conf.remove();
+                }
+                update();
+            }
+        }
+
+        function teleport(el) {
+            el.style.left = Math.floor(Math.random() * (window.innerWidth - dotSize)) + 'px';
+            el.style.top = Math.floor(Math.random() * (window.innerHeight - dotSize)) + 'px';
+        }
+
+        let rx = 100, ry = 100, rdx = 5, rdy = 5, pulseTime = 0, whiteAngle = 0, brownX = 0, ghostTime = 0;
+
+        function animate() {
+            rx += rdx; ry += rdy;
+            if (rx <= 0 || rx >= window.innerWidth - dotSize) rdx *= -1;
+            if (ry <= 0 || ry >= window.innerHeight - dotSize) rdy *= -1;
+            dots.red.el.style.left = rx + 'px'; dots.red.el.style.top = ry + 'px';
+
+            pulseTime += 0.05;
+            dots.purple.el.style.transform = `scale(${1 + Math.sin(pulseTime) * 0.4})`;
+
+            whiteAngle += 0.03;
+            dots.white.el.style.left = (window.innerWidth/2 + Math.cos(whiteAngle) * 200 - 30) + 'px';
+            dots.white.el.style.top = (window.innerHeight/2 + Math.sin(whiteAngle) * 200 - 30) + 'px';
+
+            brownX += 4; if (brownX > window.innerWidth) brownX = -dotSize;
+            dots.brown.el.style.left = brownX + 'px'; dots.brown.el.style.top = '100px';
+
+            ghostTime += 0.02;
+            dots.blue.el.style.opacity = 0.5 + Math.sin(ghostTime) * 0.5;
+
+            dots.orange.y += 2;
+            if (dots.orange.y > window.innerHeight) dots.orange.y = -dotSize;
+            dots.orange.el.style.top = dots.orange.y + 'px';
+
+            requestAnimationFrame(animate);
+        }
+
+        function handleHit(e) {
+            e.preventDefault();
+            score++;
+            scoreDisplay.textContent = score;
+            if (score % 10 === 0) launchConfetti();
+            playSound(dots[e.currentTarget.id].freq);
+
+            if (e.currentTarget.id === 'yellow') {
+                dots.yellow.scale -= 0.1;
+                e.currentTarget.style.transform = `scale(${dots.yellow.scale})`;
+                if (dots.yellow.scale <= 0.3) { dots.yellow.scale = 1; e.currentTarget.style.transform = 'scale(1)'; teleport(e.currentTarget); }
+            } else if (e.currentTarget.id === 'red') {
+                teleport(dots.red.el);
+                rx = parseFloat(dots.red.el.style.left); ry = parseFloat(dots.red.el.style.top);
+            } else if (e.currentTarget.id === 'orange') {
+                dots.orange.y = -dotSize;
+                dots.orange.el.style.left = Math.floor(Math.random() * (window.innerWidth - dotSize)) + 'px';
+            } else if (e.currentTarget.id !== 'white' && e.currentTarget.id !== 'brown') {
+                teleport(e.currentTarget);
+            }
+        }
+
+        for (const key in dots) {
+            if (!['red', 'white', 'brown', 'orange'].includes(key)) teleport(dots[key].el);
+            dots[key].el.addEventListener('mousedown', handleHit);
+            dots[key].el.addEventListener('touchstart', handleHit, { passive: false });
+        }
+        animate();
+    </script>
+</body>
+</html>
